@@ -11,6 +11,9 @@ type Config struct {
 	GraphQLPath string
 	RESTPath    string
 	DocsPath    string
+	Locale      string
+	LocaleDir   string
+	StorageDir  string
 }
 
 // LoadConfig reads configuration from environment variables with sane defaults.
@@ -28,6 +31,9 @@ func LoadConfig() *Config {
 		GraphQLPath: env("GRAPHQL_PATH", "/graphql"),
 		RESTPath:    env("REST_PATH", "/api"),
 		DocsPath:    env("DOCS_PATH", "/docs"),
+		Locale:      env("LOCALE", "en"),
+		LocaleDir:   env("LOCALE_DIR", "lang"),
+		StorageDir:  env("STORAGE_DIR", "storage"),
 	}
 }
 

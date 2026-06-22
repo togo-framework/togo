@@ -16,6 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/togo-framework/togo/cache"
+	"github.com/togo-framework/togo/i18n"
 	"github.com/togo-framework/togo/orm"
 	"github.com/togo-framework/togo/queue"
 	"github.com/togo-framework/togo/realtime"
@@ -33,6 +34,7 @@ type Kernel struct {
 	Queue    queue.Queue
 	Storage  storage.Storage
 	Realtime *realtime.Broker
+	I18n     *i18n.Bundle
 
 	db      *sql.DB
 	plugins []Plugin
@@ -43,18 +45,16 @@ type Kernel struct {
 // request-logging middleware) and hook bus, and seeds the plugin list from
 // auto-discovery (blank-imported plugin packages).
 func New() *Kernel {
-	log := newLogger()
+	// The kernel core is tiny: config, router, hooks. Every capability (log,
+	// cache, queue, storage, realtime, i18n) is contributed by a Provider, so the
+	// kernel is itself built over swappable plugins.
 	k := &Kernel{
 		Config:  LoadConfig(),
 		Router:  chi.NewMux(),
 		Hooks:   newHooks(),
-		Log:     log,
-		Cache:    cache.NewMemory(),
-		Queue:    queue.NewMemory(func(err error) { log.Error("queue job failed", "err", err) }),
-		Storage:  storage.NewFS(env("STORAGE_DIR", "storage")),
-		Realtime: realtime.NewBroker(),
-		plugins:  Discovered(),
+		plugins: Discovered(),
 	}
+	k.applyProviders()
 	// Day-zero error handling + logging, applied before any routes are mounted.
 	k.Router.Use(k.recovery, k.requestLogger)
 	// The Go backend only serves API/GraphQL/docs, so unmatched routes return JSON.
@@ -129,6 +129,14 @@ func (k *Kernel) Serve(ctx context.Context) error {
 
 // Dialect returns the ORM dialect for the configured driver.
 func (k *Kernel) Dialect() orm.Dialect { return orm.DialectFor(k.Config.DBDriver) }
+
+// T translates a key in the configured locale (trans() equivalent).
+func (k *Kernel) T(key string) string {
+	if k.I18n == nil {
+		return key
+	}
+	return k.I18n.T(k.Config.Locale, key)
+}
 
 // Close releases the DB handle.
 func (k *Kernel) Close() {
