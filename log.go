@@ -72,6 +72,29 @@ func (k *Kernel) requestLogger(next http.Handler) http.Handler {
 	})
 }
 
+// jsonErrorHandler returns an http.HandlerFunc that writes a JSON error body.
+func jsonErrorHandler(status int, msg string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write([]byte(`{"status":` + itoa(status) + `,"error":"` + msg + `"}`))
+	}
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	var b [4]byte
+	i := len(b)
+	for n > 0 {
+		i--
+		b[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(b[i:])
+}
+
 type panicError struct{ v any }
 
 func (e *panicError) Error() string { return "panic: " + sprint(e.v) }

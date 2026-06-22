@@ -42,6 +42,9 @@ func New() *Kernel {
 	}
 	// Day-zero error handling + logging, applied before any routes are mounted.
 	k.Router.Use(k.recovery, k.requestLogger)
+	// The Go backend only serves API/GraphQL/docs, so unmatched routes return JSON.
+	k.Router.NotFound(jsonErrorHandler(http.StatusNotFound, "not found"))
+	k.Router.MethodNotAllowed(jsonErrorHandler(http.StatusMethodNotAllowed, "method not allowed"))
 	return k
 }
 
