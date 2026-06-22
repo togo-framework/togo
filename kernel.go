@@ -8,6 +8,7 @@ package togo
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sort"
 
@@ -21,21 +22,27 @@ type Kernel struct {
 	Config *Config
 	Router chi.Router
 	Hooks  *Hooks
+	Log    *slog.Logger
 
 	pool    *pgxpool.Pool
 	plugins []Plugin
 	booted  bool
 }
 
-// New constructs a kernel: loads config, creates the router and hook bus, and
-// seeds the plugin list from auto-discovery (blank-imported plugin packages).
+// New constructs a kernel: loads config, logger, router (with recovery +
+// request-logging middleware) and hook bus, and seeds the plugin list from
+// auto-discovery (blank-imported plugin packages).
 func New() *Kernel {
-	return &Kernel{
+	k := &Kernel{
 		Config:  LoadConfig(),
 		Router:  chi.NewMux(),
 		Hooks:   newHooks(),
+		Log:     newLogger(),
 		plugins: Discovered(),
 	}
+	// Day-zero error handling + logging, applied before any routes are mounted.
+	k.Router.Use(k.recovery, k.requestLogger)
+	return k
 }
 
 // Use explicitly registers a plugin (in addition to auto-discovered ones).
