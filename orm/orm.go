@@ -152,6 +152,33 @@ func (q *Query[T]) Create(ctx context.Context, data map[string]any) (*T, error) 
 	return &out[0], nil
 }
 
+// Update sets columns on matching rows.
+func (q *Query[T]) Update(ctx context.Context, data map[string]any) error {
+	if len(data) == 0 {
+		return nil
+	}
+	sets := make([]string, 0, len(data))
+	args := make([]any, 0, len(data)+len(q.args))
+	i := 1
+	for c, v := range data {
+		sets = append(sets, fmt.Sprintf("%s = %s", c, q.d.Placeholder(i)))
+		args = append(args, v)
+		i++
+	}
+	sb := "UPDATE " + q.table + " SET " + strings.Join(sets, ", ")
+	if len(q.conds) > 0 {
+		parts := make([]string, len(q.conds))
+		for j, c := range q.conds {
+			parts[j] = fmt.Sprintf("%s %s %s", c.col, c.op, q.d.Placeholder(i))
+			i++
+		}
+		sb += " WHERE " + strings.Join(parts, " AND ")
+		args = append(args, q.args...)
+	}
+	_, err := q.db.ExecContext(ctx, sb, args...)
+	return err
+}
+
 // Delete deletes matching rows.
 func (q *Query[T]) Delete(ctx context.Context) error {
 	w, args := q.where()
