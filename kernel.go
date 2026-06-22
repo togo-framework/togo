@@ -14,6 +14,8 @@ import (
 	"sort"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/togo-framework/togo/orm"
 )
 
 // Kernel is the shared runtime handed to every plugin and used by the app's
@@ -111,6 +113,9 @@ func (k *Kernel) Serve(ctx context.Context) error {
 	}
 	return http.ListenAndServe(k.Config.Addr, k.Router)
 }
+
+// Dialect returns the ORM dialect for the configured driver.
+func (k *Kernel) Dialect() orm.Dialect { return orm.DialectFor(k.Config.DBDriver) }
 
 // Close releases the DB handle.
 func (k *Kernel) Close() {
