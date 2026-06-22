@@ -15,16 +15,22 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/togo-framework/togo/cache"
 	"github.com/togo-framework/togo/orm"
+	"github.com/togo-framework/togo/queue"
+	"github.com/togo-framework/togo/storage"
 )
 
 // Kernel is the shared runtime handed to every plugin and used by the app's
 // entrypoint to mount REST/GraphQL and serve.
 type Kernel struct {
-	Config *Config
-	Router chi.Router
-	Hooks  *Hooks
-	Log    *slog.Logger
+	Config  *Config
+	Router  chi.Router
+	Hooks   *Hooks
+	Log     *slog.Logger
+	Cache   cache.Cache
+	Queue   queue.Queue
+	Storage storage.Storage
 
 	db      *sql.DB
 	plugins []Plugin
@@ -35,11 +41,15 @@ type Kernel struct {
 // request-logging middleware) and hook bus, and seeds the plugin list from
 // auto-discovery (blank-imported plugin packages).
 func New() *Kernel {
+	log := newLogger()
 	k := &Kernel{
 		Config:  LoadConfig(),
 		Router:  chi.NewMux(),
 		Hooks:   newHooks(),
-		Log:     newLogger(),
+		Log:     log,
+		Cache:   cache.NewMemory(),
+		Queue:   queue.NewMemory(func(err error) { log.Error("queue job failed", "err", err) }),
+		Storage: storage.NewFS(env("STORAGE_DIR", "storage")),
 		plugins: Discovered(),
 	}
 	// Day-zero error handling + logging, applied before any routes are mounted.
