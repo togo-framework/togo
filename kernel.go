@@ -105,6 +105,12 @@ func (k *Kernel) SQL(ctx context.Context) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// SQLite is single-writer: a multi-connection pool causes lock contention and
+	// SQLITE_READONLY_DBMOVED under concurrent requests (e.g. an open SSE stream +
+	// a write). Serialize to one connection. Server DBs keep the default pool.
+	if isSQLite(k.Config.DBDriver) {
+		d.SetMaxOpenConns(1)
+	}
 	if err := d.PingContext(ctx); err != nil {
 		return nil, err
 	}
@@ -143,6 +149,11 @@ func (k *Kernel) Serve(ctx context.Context) error {
 
 // Dialect returns the ORM dialect for the configured driver.
 func (k *Kernel) Dialect() Dialect { return DialectFor(k.Config.DBDriver) }
+
+// isSQLite reports whether the driver is SQLite (single-writer).
+func isSQLite(driver string) bool {
+	return driver == "sqlite" || driver == "sqlite3"
+}
 
 // T translates a key in the configured locale (trans() equivalent).
 func (k *Kernel) T(key string) string {
