@@ -25,6 +25,15 @@ type Errors map[string][]string
 // Any reports whether any field failed.
 func (e Errors) Any() bool { return len(e) > 0 }
 
+// Error renders all failures as a single message (implements error).
+func (e Errors) Error() string {
+	parts := make([]string, 0, len(e))
+	for field, msgs := range e {
+		parts = append(parts, field+": "+strings.Join(msgs, ", "))
+	}
+	return strings.Join(parts, "; ")
+}
+
 var uuidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$`)
 
 // Validate checks v (a struct or pointer) against its `validate` tags.
