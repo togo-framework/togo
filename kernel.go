@@ -18,6 +18,7 @@ import (
 	"github.com/togo-framework/togo/cache"
 	"github.com/togo-framework/togo/orm"
 	"github.com/togo-framework/togo/queue"
+	"github.com/togo-framework/togo/realtime"
 	"github.com/togo-framework/togo/storage"
 )
 
@@ -28,9 +29,10 @@ type Kernel struct {
 	Router  chi.Router
 	Hooks   *Hooks
 	Log     *slog.Logger
-	Cache   cache.Cache
-	Queue   queue.Queue
-	Storage storage.Storage
+	Cache    cache.Cache
+	Queue    queue.Queue
+	Storage  storage.Storage
+	Realtime *realtime.Broker
 
 	db      *sql.DB
 	plugins []Plugin
@@ -47,10 +49,11 @@ func New() *Kernel {
 		Router:  chi.NewMux(),
 		Hooks:   newHooks(),
 		Log:     log,
-		Cache:   cache.NewMemory(),
-		Queue:   queue.NewMemory(func(err error) { log.Error("queue job failed", "err", err) }),
-		Storage: storage.NewFS(env("STORAGE_DIR", "storage")),
-		plugins: Discovered(),
+		Cache:    cache.NewMemory(),
+		Queue:    queue.NewMemory(func(err error) { log.Error("queue job failed", "err", err) }),
+		Storage:  storage.NewFS(env("STORAGE_DIR", "storage")),
+		Realtime: realtime.NewBroker(),
+		plugins:  Discovered(),
 	}
 	// Day-zero error handling + logging, applied before any routes are mounted.
 	k.Router.Use(k.recovery, k.requestLogger)
