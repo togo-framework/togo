@@ -1,42 +1,105 @@
 // Package togo is the microkernel of the togo framework. The kernel is
 // deliberately thin: configuration, a hook/event bus, a plugin loader+registry,
-// a database driver registry, and server bootstrap. Every capability — REST,
-// GraphQL, auth, dashboard, resources — ships as a Plugin installed by the CLI.
+// a database pool, and server bootstrap. Every capability — REST, GraphQL, auth,
+// dashboard, resources — ships as a Plugin installed by the CLI and discovered
+// here.
 package togo
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"sort"
 
-// Plugin is the contract every togo capability implements. The runtime boots
-// plugins in ascending Priority order (0–100), mirroring laravilt's ordered
-// service-provider lifecycle.
-type Plugin interface {
-	// Name uniquely identifies the plugin (e.g. "rest-huma", "auth-supabase").
-	Name() string
-	// Priority controls boot order; lower boots first. Infrastructure plugins
-	// (config, db) use low values; feature plugins use higher ones.
-	Priority() int
-	// Register binds services, config, and hooks. No I/O or route mounting here.
-	Register(k *Kernel) error
-	// Boot starts the plugin: mount routes, register schema, run migrations.
-	Boot(ctx context.Context, k *Kernel) error
-}
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
-// Kernel is the shared runtime handed to every plugin. Concrete service fields
-// (Config, Hooks, Router, DB, Resources, GraphQL, REST) are added as the
-// framework phases land.
+// Kernel is the shared runtime handed to every plugin and used by the app's
+// entrypoint to mount REST/GraphQL and serve.
 type Kernel struct {
+	Config *Config
+	Router chi.Router
+	Hooks  *Hooks
+
+	pool    *pgxpool.Pool
 	plugins []Plugin
+	booted  bool
 }
 
-// Use registers a plugin with the kernel. Plugins are sorted and booted by the
-// runtime; auto-discovery wires first-party and installed plugins here.
+// New constructs a kernel: loads config, creates the router and hook bus, and
+// seeds the plugin list from auto-discovery (blank-imported plugin packages).
+func New() *Kernel {
+	return &Kernel{
+		Config:  LoadConfig(),
+		Router:  chi.NewMux(),
+		Hooks:   newHooks(),
+		plugins: Discovered(),
+	}
+}
+
+// Use explicitly registers a plugin (in addition to auto-discovered ones).
 func (k *Kernel) Use(p Plugin) *Kernel {
 	k.plugins = append(k.plugins, p)
 	return k
 }
 
-// Plugins returns the registered plugins.
-func (k *Kernel) Plugins() []Plugin { return k.plugins }
+// Plugins returns the registered plugins sorted by boot priority.
+func (k *Kernel) Plugins() []Plugin {
+	ps := append([]Plugin(nil), k.plugins...)
+	sort.SliceStable(ps, func(i, j int) bool { return ps[i].Priority() < ps[j].Priority() })
+	return ps
+}
 
-// New constructs an empty kernel.
-func New() *Kernel { return &Kernel{} }
+// DB returns a lazily-opened Postgres pool from Config.DatabaseURL. Any database
+// driver is supported via the connection string; Postgres (pgx) is the default.
+func (k *Kernel) DB(ctx context.Context) (*pgxpool.Pool, error) {
+	if k.pool != nil {
+		return k.pool, nil
+	}
+	if k.Config.DatabaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL is not set")
+	}
+	pool, err := pgxpool.New(ctx, k.Config.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+	k.pool = pool
+	return pool, nil
+}
+
+// Boot runs Register then Boot for every plugin in priority order. Safe to call
+// once; subsequent calls are no-ops.
+func (k *Kernel) Boot(ctx context.Context) error {
+	if k.booted {
+		return nil
+	}
+	ps := k.Plugins()
+	for _, p := range ps {
+		if err := p.Register(k); err != nil {
+			return fmt.Errorf("register %s: %w", p.Name(), err)
+		}
+	}
+	for _, p := range ps {
+		if err := p.Boot(ctx, k); err != nil {
+			return fmt.Errorf("boot %s: %w", p.Name(), err)
+		}
+	}
+	k.booted = true
+	return nil
+}
+
+// Serve boots plugins and starts the HTTP server on Config.Addr.
+func (k *Kernel) Serve(ctx context.Context) error {
+	if err := k.Boot(ctx); err != nil {
+		return err
+	}
+	return http.ListenAndServe(k.Config.Addr, k.Router)
+}
+
+// Close releases the DB pool.
+func (k *Kernel) Close() {
+	if k.pool != nil {
+		k.pool.Close()
+	}
+}
