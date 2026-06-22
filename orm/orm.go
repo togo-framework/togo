@@ -12,9 +12,26 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
+
+// identRe matches a safe SQL identifier (optionally table-qualified). Values are
+// always parameterized; column/operator names cannot be, so they are validated
+// against an allowlist to prevent SQL injection through builder inputs.
+var identRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$`)
+
+// orderRe matches "col [ASC|DESC]" lists, e.g. "created_at DESC, name".
+var orderRe = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?(\s+(?i:ASC|DESC))?)(\s*,\s*([A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?(\s+(?i:ASC|DESC))?))*$`)
+
+var allowedOps = map[string]bool{
+	"=": true, "!=": true, "<>": true, "<": true, "<=": true, ">": true, ">=": true,
+	"LIKE": true, "ILIKE": true, "IS": true, "IS NOT": true, "IN": true, "NOT IN": true,
+}
+
+func validIdent(s string) bool { return identRe.MatchString(s) }
+func validOp(op string) bool   { return allowedOps[strings.ToUpper(strings.TrimSpace(op))] }
 
 // Dialect captures the per-driver SQL differences the builder needs.
 type Dialect struct {
@@ -54,6 +71,7 @@ type Query[T any] struct {
 	order  string
 	limit  int
 	offset int
+	err    error // first validation error; surfaced by terminal methods
 }
 
 // For starts a query against table, scanning into T.
@@ -61,8 +79,17 @@ func For[T any](db *sql.DB, d Dialect, table string) *Query[T] {
 	return &Query[T]{db: db, d: d, table: table, limit: -1, offset: -1}
 }
 
-// Where adds a condition. op may be =, !=, <, >, LIKE, ILIKE, etc.
+// Where adds a condition. op may be =, !=, <, >, LIKE, ILIKE, etc. The column and
+// operator are validated (the value is always parameterized).
 func (q *Query[T]) Where(col, op string, val any) *Query[T] {
+	if !validIdent(col) {
+		q.setErr(fmt.Errorf("orm: invalid column %q", col))
+		return q
+	}
+	if !validOp(op) {
+		q.setErr(fmt.Errorf("orm: invalid operator %q", op))
+		return q
+	}
 	if strings.EqualFold(op, "ILIKE") {
 		op = q.d.ILike
 	}
@@ -71,8 +98,22 @@ func (q *Query[T]) Where(col, op string, val any) *Query[T] {
 	return q
 }
 
-// Order sets the ORDER BY clause (raw, e.g. "created_at DESC").
-func (q *Query[T]) Order(s string) *Query[T] { q.order = s; return q }
+// Order sets the ORDER BY clause (e.g. "created_at DESC"). Validated against an
+// identifier+direction allowlist.
+func (q *Query[T]) Order(s string) *Query[T] {
+	if s != "" && !orderRe.MatchString(strings.TrimSpace(s)) {
+		q.setErr(fmt.Errorf("orm: invalid order clause %q", s))
+		return q
+	}
+	q.order = s
+	return q
+}
+
+func (q *Query[T]) setErr(err error) {
+	if q.err == nil {
+		q.err = err
+	}
+}
 
 // Limit sets LIMIT.
 func (q *Query[T]) Limit(n int) *Query[T] { q.limit = n; return q }
@@ -93,6 +134,9 @@ func (q *Query[T]) where() (string, []any) {
 
 // Get returns all matching rows.
 func (q *Query[T]) Get(ctx context.Context) ([]T, error) {
+	if q.err != nil {
+		return nil, q.err
+	}
 	w, args := q.where()
 	sb := "SELECT * FROM " + q.table + w
 	if q.order != "" {
@@ -129,11 +173,17 @@ func (q *Query[T]) Find(ctx context.Context, id any) (*T, error) {
 
 // Create inserts a row and returns it (RETURNING *).
 func (q *Query[T]) Create(ctx context.Context, data map[string]any) (*T, error) {
+	if q.err != nil {
+		return nil, q.err
+	}
 	cols := make([]string, 0, len(data))
 	ph := make([]string, 0, len(data))
 	args := make([]any, 0, len(data))
 	i := 1
 	for c, v := range data {
+		if !validIdent(c) {
+			return nil, fmt.Errorf("orm: invalid column %q", c)
+		}
 		cols = append(cols, c)
 		ph = append(ph, q.d.Placeholder(i))
 		args = append(args, v)
@@ -154,6 +204,9 @@ func (q *Query[T]) Create(ctx context.Context, data map[string]any) (*T, error) 
 
 // Update sets columns on matching rows.
 func (q *Query[T]) Update(ctx context.Context, data map[string]any) error {
+	if q.err != nil {
+		return q.err
+	}
 	if len(data) == 0 {
 		return nil
 	}
@@ -161,6 +214,9 @@ func (q *Query[T]) Update(ctx context.Context, data map[string]any) error {
 	args := make([]any, 0, len(data)+len(q.args))
 	i := 1
 	for c, v := range data {
+		if !validIdent(c) {
+			return fmt.Errorf("orm: invalid column %q", c)
+		}
 		sets = append(sets, fmt.Sprintf("%s = %s", c, q.d.Placeholder(i)))
 		args = append(args, v)
 		i++
@@ -181,6 +237,9 @@ func (q *Query[T]) Update(ctx context.Context, data map[string]any) error {
 
 // Delete deletes matching rows.
 func (q *Query[T]) Delete(ctx context.Context) error {
+	if q.err != nil {
+		return q.err
+	}
 	w, args := q.where()
 	_, err := q.db.ExecContext(ctx, "DELETE FROM "+q.table+w, args...)
 	return err
