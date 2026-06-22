@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a bug in a togo framework project
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve togo! Please fill out the details below.
+  - type: input
+    id: repo
+    attributes:
+      label: Which repo / package?
+      placeholder: "cli, togo, create-togo-app, togo-mcp, plugin-template…"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: togo version
+      description: Output of `togo version`
+      placeholder: "togo 0.1.0 …"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. togo new demo
+        2. togo make:resource Post title:string
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [Linux, macOS, Windows]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      render: shell

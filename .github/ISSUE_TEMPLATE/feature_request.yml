@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an idea for the togo framework
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that togo makes hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would the ideal CLI command / API / generator look like?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI / generators
+        - Kernel / plugins
+        - GraphQL / REST (API)
+        - Database (sqlc / Atlas)
+        - Auth / dashboard (Supabase)
+        - MCP / AI
+        - Infra / deploy (Terraform)
+        - Frontend (Next.js)
+        - Docs
+    validations:
+      required: true
