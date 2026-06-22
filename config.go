@@ -22,7 +22,7 @@ func LoadConfig() *Config {
 	driver := env("DB_DRIVER", "sqlite")
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" && driver == "sqlite" {
-		dsn = "file:./togo.db?_pragma=foreign_keys(1)&_time_format=sqlite"
+		dsn = "file:./togo.db?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_time_format=sqlite"
 	}
 	return &Config{
 		Addr:        env("ADDR", ":8080"),
