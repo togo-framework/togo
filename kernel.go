@@ -15,12 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/togo-framework/togo/cache"
-	"github.com/togo-framework/togo/i18n"
 	"github.com/togo-framework/togo/orm"
-	"github.com/togo-framework/togo/queue"
-	"github.com/togo-framework/togo/realtime"
-	"github.com/togo-framework/togo/storage"
 )
 
 // Kernel is the shared runtime handed to every plugin and used by the app's
@@ -30,11 +25,11 @@ type Kernel struct {
 	Router  chi.Router
 	Hooks   *Hooks
 	Log     *slog.Logger
-	Cache    cache.Cache
-	Queue    queue.Queue
-	Storage  storage.Storage
-	Realtime realtime.Broker
-	I18n     i18n.Translator
+	Cache    Cache
+	Queue    Queue
+	Storage  Storage
+	Realtime Broker
+	I18n     Translator
 
 	db       *sql.DB
 	services map[string]any
