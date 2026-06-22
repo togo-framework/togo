@@ -33,8 +33,8 @@ type Kernel struct {
 	Cache    cache.Cache
 	Queue    queue.Queue
 	Storage  storage.Storage
-	Realtime *realtime.Broker
-	I18n     *i18n.Bundle
+	Realtime realtime.Broker
+	I18n     i18n.Translator
 
 	db      *sql.DB
 	plugins []Plugin
