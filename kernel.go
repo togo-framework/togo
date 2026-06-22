@@ -7,13 +7,13 @@ package togo
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"sort"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Kernel is the shared runtime handed to every plugin and used by the app's
@@ -24,7 +24,7 @@ type Kernel struct {
 	Hooks  *Hooks
 	Log    *slog.Logger
 
-	pool    *pgxpool.Pool
+	db      *sql.DB
 	plugins []Plugin
 	booted  bool
 }
@@ -61,21 +61,26 @@ func (k *Kernel) Plugins() []Plugin {
 	return ps
 }
 
-// DB returns a lazily-opened Postgres pool from Config.DatabaseURL. Any database
-// driver is supported via the connection string; Postgres (pgx) is the default.
-func (k *Kernel) DB(ctx context.Context) (*pgxpool.Pool, error) {
-	if k.pool != nil {
-		return k.pool, nil
+// SQL returns a lazily-opened database/sql handle using Config.DBDriver (default
+// "sqlite"). Driver registration is the app's responsibility (blank-import the
+// driver, or a DB provider plugin) — SQLite is core; Postgres/MySQL/etc. are
+// provider plugins that register their driver and set DB_DRIVER.
+func (k *Kernel) SQL(ctx context.Context) (*sql.DB, error) {
+	if k.db != nil {
+		return k.db, nil
 	}
 	if k.Config.DatabaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL is not set")
 	}
-	pool, err := pgxpool.New(ctx, k.Config.DatabaseURL)
+	d, err := sql.Open(k.Config.DBDriver, k.Config.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
-	k.pool = pool
-	return pool, nil
+	if err := d.PingContext(ctx); err != nil {
+		return nil, err
+	}
+	k.db = d
+	return d, nil
 }
 
 // Boot runs Register then Boot for every plugin in priority order. Safe to call
@@ -107,9 +112,9 @@ func (k *Kernel) Serve(ctx context.Context) error {
 	return http.ListenAndServe(k.Config.Addr, k.Router)
 }
 
-// Close releases the DB pool.
+// Close releases the DB handle.
 func (k *Kernel) Close() {
-	if k.pool != nil {
-		k.pool.Close()
+	if k.db != nil {
+		_ = k.db.Close()
 	}
 }
