@@ -21,7 +21,7 @@ CLI.
 | [`cli`](https://github.com/togo-framework/cli) | The `togo` binary — generators, db, install, mcp, deploy |
 | [`create-togo-app`](https://github.com/togo-framework/create-togo-app) | Project template rendered by `togo new` |
 | [`plugin-template`](https://github.com/togo-framework/plugin-template) | Starter for togo plugins |
-| [`togo-mcp`](https://github.com/togo-framework/togo-mcp) | MCP server exposing generators to AI agents |
+| [`mcp`](https://github.com/togo-framework/mcp) | MCP server exposing generators to AI agents |
 
 ## Quickstart
 

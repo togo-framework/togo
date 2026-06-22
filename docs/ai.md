@@ -5,7 +5,7 @@ Every togo project is born agent-ready. `togo new` scaffolds a `.claude/` tree
 
 ## MCP server
 
-[`togo-mcp`](https://github.com/togo-framework/togo-mcp) exposes the generators as
+[`mcp`](https://github.com/togo-framework/mcp) exposes the generators as
 MCP tools: `make_resource`, `generate`, `list_resources`, `migrate`.
 
 ```bash
