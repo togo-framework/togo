@@ -36,9 +36,25 @@ type Kernel struct {
 	Realtime realtime.Broker
 	I18n     i18n.Translator
 
-	db      *sql.DB
-	plugins []Plugin
-	booted  bool
+	db       *sql.DB
+	services map[string]any
+	plugins  []Plugin
+	booted   bool
+}
+
+// Set stores an arbitrary service in the kernel container, so any plugin can
+// inject capabilities the core doesn't know about (e.g. auth).
+func (k *Kernel) Set(key string, v any) {
+	if k.services == nil {
+		k.services = map[string]any{}
+	}
+	k.services[key] = v
+}
+
+// Get retrieves a service registered via Set.
+func (k *Kernel) Get(key string) (any, bool) {
+	v, ok := k.services[key]
+	return v, ok
 }
 
 // New constructs a kernel: loads config, logger, router (with recovery +
@@ -51,8 +67,9 @@ func New() *Kernel {
 	k := &Kernel{
 		Config:  LoadConfig(),
 		Router:  chi.NewMux(),
-		Hooks:   newHooks(),
-		plugins: Discovered(),
+		Hooks:    newHooks(),
+		services: map[string]any{},
+		plugins:  Discovered(),
 	}
 	k.applyProviders()
 	// Day-zero error handling + logging, applied before any routes are mounted.
