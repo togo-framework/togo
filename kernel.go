@@ -66,12 +66,14 @@ func New() *Kernel {
 		plugins:  Discovered(),
 	}
 	k.Log = defaultLogger() // baseline; the log plugin (if installed) overrides it
-	k.applyProviders()
-	// Day-zero error handling + logging, applied before any routes are mounted.
+	// Day-zero middleware MUST be registered before any provider mounts routes —
+	// chi forbids Use() after routes exist (e.g. the auth plugin adds routes).
 	k.Router.Use(k.recovery, k.requestLogger)
 	// The Go backend only serves API/GraphQL/docs, so unmatched routes return JSON.
 	k.Router.NotFound(jsonErrorHandler(http.StatusNotFound, "not found"))
 	k.Router.MethodNotAllowed(jsonErrorHandler(http.StatusMethodNotAllowed, "method not allowed"))
+	// Providers run last: some (auth) mount routes + their own middleware.
+	k.applyProviders()
 	return k
 }
 
