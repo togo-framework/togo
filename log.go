@@ -5,30 +5,17 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// newLogger builds a slog logger from LOG_LEVEL (debug|info|warn|error) and
-// LOG_FORMAT (json|text, default text).
-func newLogger() *slog.Logger {
-	level := slog.LevelInfo
-	switch strings.ToLower(os.Getenv("LOG_LEVEL")) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	}
-	opts := &slog.HandlerOptions{Level: level}
-	var h slog.Handler = slog.NewTextHandler(os.Stderr, opts)
-	if strings.ToLower(os.Getenv("LOG_FORMAT")) == "json" {
-		h = slog.NewJSONHandler(os.Stderr, opts)
-	}
-	return slog.New(h)
+// defaultLogger is the kernel's minimal baseline logger. The kernel always has a
+// logger (middleware depends on it); richer/configurable logging (levels, JSON,
+// service name, sinks) ships as the github.com/togo-framework/log plugin, which
+// registers a provider that overrides Kernel.Log.
+func defaultLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
 }
 
 // ReportError logs an error and fires the "error" hook so trackers (Sentry,

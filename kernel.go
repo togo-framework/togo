@@ -65,6 +65,7 @@ func New() *Kernel {
 		services: map[string]any{},
 		plugins:  Discovered(),
 	}
+	k.Log = defaultLogger() // baseline; the log plugin (if installed) overrides it
 	k.applyProviders()
 	// Day-zero error handling + logging, applied before any routes are mounted.
 	k.Router.Use(k.recovery, k.requestLogger)

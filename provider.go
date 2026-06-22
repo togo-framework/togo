@@ -43,12 +43,9 @@ const (
 	PriorityLate    = 90 // queue (depends on log)
 )
 
-// Only the logger is a core default — it's foundational and always present.
-// All feature providers live in togo/providers/* and register themselves when
-// the project imports them.
-func init() {
-	RegisterProviderFunc("log", PriorityCore, func(k *Kernel) error { k.Log = newLogger(); return nil })
-}
+// The kernel registers NO built-in providers. The logger baseline is set
+// directly in New(); every capability (log, cache, queue, storage, realtime,
+// i18n, orm, …) ships as its own plugin repo that self-registers when imported.
 
 // applyProviders runs every registered provider in ascending priority order.
 func (k *Kernel) applyProviders() {
