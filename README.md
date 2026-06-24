@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/togo-mark.svg" width="96" alt="togo"></p>
+
 <h1 align="center">togo</h1>
 <p align="center"><em>Go, the artisan way.</em></p>
 
@@ -44,3 +46,15 @@ togo migrate && togo serve
 ## License
 
 MIT
+
+---
+
+## 💎 Premium sponsors
+
+togo is proudly sponsored by **ID8 Media** and **One Studio**.
+
+<p align="center">
+  <a href="https://id8media.com"><img src=".github/assets/id8media.svg" height="44" alt="ID8 Media" /></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://one-studio.co"><img src=".github/assets/one-studio.jpeg" height="44" alt="One Studio" /></a>
+</p>
