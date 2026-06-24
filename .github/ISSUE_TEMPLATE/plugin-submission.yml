@@ -1,0 +1,58 @@
+name: Plugin submission
+description: Propose a plugin for the ToGO marketplace (to-go.dev/plugins)
+title: "Plugin submission: "
+labels: ["plugin-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for extending ToGO! Submit a plugin and it’ll be reviewed for the
+        [marketplace](https://to-go.dev/plugins). Plugins follow the `togo install owner/repo`
+        convention and auto-register with the kernel via an `init()`.
+  - type: input
+    id: plugin-name
+    attributes:
+      label: Plugin name
+      placeholder: auth-clerk
+    validations:
+      required: true
+  - type: input
+    id: repo-url
+    attributes:
+      label: Repository URL
+      placeholder: https://github.com/you/togo-auth-clerk
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Auth
+        - Data & Storage
+        - Infrastructure
+        - Messaging
+        - UI & i18n
+        - Dev & Testing
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What capability does this plugin add?
+      placeholder: Adds Clerk-based authentication behind the togo auth interface.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: Public repository with an MIT-compatible license
+          required: true
+        - label: Has a README and an `init()` that registers with the togo kernel
+          required: true
+        - label: Installs via `togo install owner/repo`
+          required: true
