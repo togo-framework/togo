@@ -33,7 +33,28 @@ type Kernel struct {
 	db       *sql.DB
 	services map[string]any
 	plugins  []Plugin
+	mw       []func(http.Handler) http.Handler
 	booted   bool
+}
+
+// UseMiddleware registers global HTTP middleware that wraps the whole router at
+// serve time (outermost first-registered). Unlike chi's Router.Use — which a
+// plugin can only call before ANY route is mounted — this can be called by any
+// number of plugins at any provider priority: the middleware is applied as an
+// outer wrapper in Handler(), after all providers have run. Prefer this over
+// k.Router.Use for cross-cutting middleware (CORS, auth context, tracing).
+func (k *Kernel) UseMiddleware(m ...func(http.Handler) http.Handler) {
+	k.mw = append(k.mw, m...)
+}
+
+// Handler returns the kernel's HTTP handler: the router wrapped by every
+// middleware registered via UseMiddleware (first-registered is outermost).
+func (k *Kernel) Handler() http.Handler {
+	var h http.Handler = k.Router
+	for i := len(k.mw) - 1; i >= 0; i-- {
+		h = k.mw[i](h)
+	}
+	return h
 }
 
 // Set stores an arbitrary service in the kernel container, so any plugin can
@@ -144,7 +165,7 @@ func (k *Kernel) Serve(ctx context.Context) error {
 	if err := k.Boot(ctx); err != nil {
 		return err
 	}
-	return http.ListenAndServe(k.Config.Addr, k.Router)
+	return http.ListenAndServe(k.Config.Addr, k.Handler())
 }
 
 // Dialect returns the ORM dialect for the configured driver.
