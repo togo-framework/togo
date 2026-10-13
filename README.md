@@ -10,6 +10,9 @@ developer experience to Go: a powerful CLI, code generators, a unified
 tools and UI components, Supabase auth/dashboard by default, a fast `togo deploy`,
 and first-class Claude Code / MCP integration.
 
+
+⭐ **If togo saves you time, star the repo** so more Go developers find it. Docs: [to-go.dev/en/docs](https://to-go.dev/en/docs) · Plugins: [to-go.dev/marketplace](https://to-go.dev/marketplace)
+
 This repository is the **microkernel** — the thin core every togo app builds on.
 The kernel provides configuration, a priority-ordered hook/event bus, a plugin
 loader + registry, a database driver registry, and server bootstrap. Everything
@@ -49,6 +52,14 @@ togo install claude    # optional: add the togo AI agent team to Claude Code
 ## License
 
 MIT
+
+## More open source from the same author
+
+- [TomatoPHP](https://tomatophp.com): 60+ open-source FilamentPHP plugins for Laravel
+- [Laravilt](https://laravilt.com): Laravel admin panels rendered with Inertia on Vue 3 or React 19
+- [Zekra](https://zekra.dev): long-term memory for AI agents over MCP
+
+Built by [Fady Mondy](https://fadymondy.com).
 
 ---
 
