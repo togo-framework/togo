@@ -11,12 +11,16 @@ import (
 type Dialect struct {
 	Placeholder func(n int) string // 1-based positional placeholder
 	ILike       string             // case-insensitive LIKE operator
+	// NoReturning marks drivers without INSERT … RETURNING (MySQL). The ORM then
+	// inserts with an app-generated id and re-selects the row by it. The zero
+	// value keeps RETURNING, so existing dialects are unaffected.
+	NoReturning bool
 }
 
 var (
 	sqliteDialect   = Dialect{Placeholder: func(int) string { return "?" }, ILike: "LIKE"}
 	postgresDialect = Dialect{Placeholder: func(n int) string { return "$" + strconv.Itoa(n) }, ILike: "ILIKE"}
-	mysqlDialect    = Dialect{Placeholder: func(int) string { return "?" }, ILike: "LIKE"}
+	mysqlDialect    = Dialect{Placeholder: func(int) string { return "?" }, ILike: "LIKE", NoReturning: true}
 )
 
 // Dialect registry. sqlite/postgres/mysql are built in (registered below); a DB
