@@ -61,6 +61,17 @@ If it saves you time or powers your business, please consider supporting its dev
 
 Every sponsorship goes into maintenance, docs, translations and new features.
 
+## Built with ToGO (showcase)
+
+Open-source products running in production on togo; read their code to see a full-size togo app:
+
+- [**Mahaam**](https://github.com/fadymondy/mahaam): project management for agencies (projects, issues, time, invoices, client portal, AI agents over MCP)
+- [**Hosbah**](https://github.com/fadymondy/hosbah): server management and app hosting (zero-downtime deploys, databases, backups, tunnels)
+- [**Moharrik**](https://github.com/fadymondy/moharrik): the AI engine for a business (inbox, CRM, leads, email marketing, automation)
+- [**Zekra**](https://github.com/fadymondy/zekra): shared long-term memory for AI agents over MCP, with its engine shipped as togo plugins
+
+More, and how to add yours: **[SHOWCASE.md](SHOWCASE.md)**.
+
 ## License
 
 MIT
