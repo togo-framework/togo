@@ -127,6 +127,7 @@ func (k *Kernel) SQL(ctx context.Context) (*sql.DB, error) {
 		d.SetMaxOpenConns(1)
 	}
 	if err := d.PingContext(ctx); err != nil {
+		_ = d.Close() // don't leak the pool (and its connection) on a failed ping
 		return nil, err
 	}
 	k.db = d
