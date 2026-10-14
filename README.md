@@ -52,14 +52,17 @@ togo install claude    # optional: add the togo AI agent team to Claude Code
 ## Sponsor
 
 ToGO is free and open source, built and maintained by [Fady Mondy](https://github.com/fadymondy).
-If it saves you time or powers your business, please consider supporting its development:
+It is the framework behind a whole family of open-source production apps ([Zekra](https://github.com/fadymondy/zekra),
+[Mahaam](https://github.com/fadymondy/mahaam), [Moharrik](https://github.com/fadymondy/moharrik),
+[Hosbah](https://github.com/fadymondy/hosbah)) and 200+ plugins. Sponsoring ToGO keeps all of them moving.
+
+**[Sponsor ToGO →](https://to-go.dev/sponsor)**
 
 <p>
+  <a href="https://to-go.dev/sponsor"><img src="https://img.shields.io/badge/Sponsor-ToGO-00ADD8?logo=go&logoColor=white" alt="Sponsor ToGO" /></a>
   <a href="https://github.com/sponsors/fadymondy"><img src="https://img.shields.io/badge/GitHub%20Sponsors-fadymondy-ea4aaa?logo=githubsponsors&logoColor=white" alt="GitHub Sponsors" /></a>
   <a href="https://buymeacoffee.com/fadymondy"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-fadymondy-ffdd00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
-
-Every sponsorship goes into maintenance, docs, translations and new features.
 
 ## Built with ToGO (showcase)
 
