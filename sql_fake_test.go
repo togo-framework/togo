@@ -15,7 +15,12 @@ type fakeDriver struct{ open atomic.Int32 }
 
 var testDriver = &fakeDriver{}
 
-func init() { sql.Register("togo-fake", testDriver) }
+// The kernel module imports no real database driver, so the fake can also be
+// registered as "sqlite" to exercise the SQLite-specific pool settings.
+func init() {
+	sql.Register("togo-fake", testDriver)
+	sql.Register("sqlite", testDriver)
+}
 
 var (
 	errFakeOpen = errors.New("fake: open failed")
@@ -35,9 +40,11 @@ type fakeConn struct {
 	pingFail bool
 }
 
-func (c *fakeConn) Prepare(string) (driver.Stmt, error) { return nil, errors.New("fake: not supported") }
-func (c *fakeConn) Begin() (driver.Tx, error)           { return nil, errors.New("fake: not supported") }
-func (c *fakeConn) Close() error                        { c.d.open.Add(-1); return nil }
+func (c *fakeConn) Prepare(string) (driver.Stmt, error) {
+	return nil, errors.New("fake: not supported")
+}
+func (c *fakeConn) Begin() (driver.Tx, error) { return nil, errors.New("fake: not supported") }
+func (c *fakeConn) Close() error              { c.d.open.Add(-1); return nil }
 
 func (c *fakeConn) Ping(context.Context) error {
 	if c.pingFail {

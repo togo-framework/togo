@@ -23,13 +23,15 @@ func newTestKernel(logOut io.Writer) *Kernel {
 }
 
 func TestRecovery(t *testing.T) {
+	errBadState := errors.New("bad state")
 	tests := []struct {
 		name     string
 		panicVal any
 		wantMsg  string
+		wantIs   error // error the reported panic must unwrap to, if any
 	}{
 		{name: "string", panicVal: "boom", wantMsg: "panic: boom"},
-		{name: "error", panicVal: errors.New("bad state"), wantMsg: "panic: bad state"},
+		{name: "error", panicVal: errBadState, wantMsg: "panic: bad state", wantIs: errBadState},
 		{name: "int", panicVal: 42, wantMsg: "panic: 42"},
 		{name: "struct", panicVal: struct{ ID int }{7}, wantMsg: "panic: {7}"},
 	}
@@ -57,6 +59,12 @@ func TestRecovery(t *testing.T) {
 			}
 			if reported == nil || reported.Error() != tt.wantMsg {
 				t.Fatalf("error hook got %v, want %q", reported, tt.wantMsg)
+			}
+			if tt.wantIs != nil && !errors.Is(reported, tt.wantIs) {
+				t.Errorf("reported panic does not unwrap to %v", tt.wantIs)
+			}
+			if tt.wantIs == nil && errors.Unwrap(reported) != nil {
+				t.Errorf("non-error panic unwrapped to %v", errors.Unwrap(reported))
 			}
 		})
 	}
