@@ -5,15 +5,15 @@ import "os"
 // Config holds runtime configuration resolved from the environment, so
 // connections/URLs/endpoints stay dynamic (togo convention: .env + hooks).
 type Config struct {
-	Addr        string
-	DBDriver    string // database/sql driver name (default "sqlite"); providers register others
-	DatabaseURL string
-	GraphQLPath string
-	RESTPath    string
-	DocsPath    string
-	Locale      string
-	LocaleDir   string
-	StorageDir  string
+	Addr        string // HTTP listen address (ADDR, default ":8080")
+	DBDriver    string // database/sql driver name (DB_DRIVER, default "sqlite"); providers register others
+	DatabaseURL string // driver DSN (DATABASE_URL); defaults to ./togo.db for SQLite
+	GraphQLPath string // GraphQL mount path (GRAPHQL_PATH, default "/graphql")
+	RESTPath    string // REST API prefix (REST_PATH, default "/api")
+	DocsPath    string // API docs path (DOCS_PATH, default "/docs")
+	Locale      string // default locale for Kernel.T (LOCALE, default "en")
+	LocaleDir   string // translation files directory (LOCALE_DIR, default "lang")
+	StorageDir  string // local storage root (STORAGE_DIR, default "storage")
 }
 
 // LoadConfig reads configuration from environment variables with sane defaults.

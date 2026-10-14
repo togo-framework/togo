@@ -15,7 +15,8 @@ type listener struct {
 }
 
 // Hooks is a priority-ordered event bus for lifecycle events (resource CRUD,
-// auth, plugin load). Listeners run in ascending priority (0 first).
+// auth, plugin load). Listeners run in ascending priority (0 first). The zero
+// value is ready to use.
 type Hooks struct {
 	mu        sync.RWMutex
 	listeners map[string][]listener
@@ -27,6 +28,9 @@ func newHooks() *Hooks { return &Hooks{listeners: map[string][]listener{}} }
 func (h *Hooks) On(event string, priority int, fn HookFunc) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if h.listeners == nil {
+		h.listeners = map[string][]listener{}
+	}
 	ls := append(h.listeners[event], listener{priority: priority, fn: fn})
 	sort.SliceStable(ls, func(i, j int) bool { return ls[i].priority < ls[j].priority })
 	h.listeners[event] = ls

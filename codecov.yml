@@ -1,0 +1,18 @@
+# Codecov configuration — https://docs.codecov.com/docs/codecov-yaml
+# The kernel has no generated code, mocks or main stubs, so nothing is ignored:
+# the reported number is total statement coverage of the package.
+coverage:
+  precision: 1
+  round: down
+  range: "70...100"
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+comment:
+  layout: "condensed_header, diff, files"
+  require_changes: true

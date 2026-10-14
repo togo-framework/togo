@@ -1,8 +1,3 @@
-// Package togo is the microkernel of the togo framework. The kernel is
-// deliberately thin: configuration, a hook/event bus, a plugin loader+registry,
-// a database pool, and server bootstrap. Every capability — REST, GraphQL, auth,
-// dashboard, resources — ships as a Plugin installed by the CLI and discovered
-// here.
 package togo
 
 import (
@@ -14,16 +9,15 @@ import (
 	"sort"
 
 	"github.com/go-chi/chi/v5"
-
 )
 
 // Kernel is the shared runtime handed to every plugin and used by the app's
 // entrypoint to mount REST/GraphQL and serve.
 type Kernel struct {
-	Config  *Config
-	Router  chi.Router
-	Hooks   *Hooks
-	Log     *slog.Logger
+	Config   *Config
+	Router   chi.Router
+	Hooks    *Hooks
+	Log      *slog.Logger
 	Cache    Cache
 	Queue    Queue
 	Storage  Storage
@@ -80,8 +74,8 @@ func New() *Kernel {
 	// cache, queue, storage, realtime, i18n) is contributed by a Provider, so the
 	// kernel is itself built over swappable plugins.
 	k := &Kernel{
-		Config:  LoadConfig(),
-		Router:  chi.NewMux(),
+		Config:   LoadConfig(),
+		Router:   chi.NewMux(),
 		Hooks:    newHooks(),
 		services: map[string]any{},
 		plugins:  Discovered(),
@@ -133,6 +127,7 @@ func (k *Kernel) SQL(ctx context.Context) (*sql.DB, error) {
 		d.SetMaxOpenConns(1)
 	}
 	if err := d.PingContext(ctx); err != nil {
+		_ = d.Close() // don't leak the pool (and its connection) on a failed ping
 		return nil, err
 	}
 	k.db = d

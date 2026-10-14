@@ -2,6 +2,7 @@ package togo
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -34,6 +35,11 @@ func (k *Kernel) recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
+				if rec == http.ErrAbortHandler {
+					// Deliberate abort (e.g. httputil.ReverseProxy): let net/http
+					// drop the connection quietly, as it does without middleware.
+					panic(rec)
+				}
 				k.ReportError(r.Context(), &panicError{rec})
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
@@ -61,7 +67,7 @@ func (k *Kernel) requestLogger(next http.Handler) http.Handler {
 
 // jsonErrorHandler returns an http.HandlerFunc that writes a JSON error body.
 func jsonErrorHandler(status int, msg string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write([]byte(`{"status":` + itoa(status) + `,"error":"` + msg + `"}`))
@@ -84,14 +90,10 @@ func itoa(n int) string {
 
 type panicError struct{ v any }
 
-func (e *panicError) Error() string { return "panic: " + sprint(e.v) }
+func (e *panicError) Error() string { return "panic: " + fmt.Sprint(e.v) }
 
-func sprint(v any) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
-	if e, ok := v.(error); ok {
-		return e.Error()
-	}
-	return "unknown"
+// Unwrap exposes a panicked error so hooks can match it with errors.Is/As.
+func (e *panicError) Unwrap() error {
+	err, _ := e.v.(error)
+	return err
 }
