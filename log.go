@@ -67,7 +67,7 @@ func (k *Kernel) requestLogger(next http.Handler) http.Handler {
 
 // jsonErrorHandler returns an http.HandlerFunc that writes a JSON error body.
 func jsonErrorHandler(status int, msg string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write([]byte(`{"status":` + itoa(status) + `,"error":"` + msg + `"}`))

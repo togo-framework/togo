@@ -104,7 +104,7 @@ func TestRegisterDialect(t *testing.T) {
 		delete(dialects, "togo-test-db")
 		dialectMu.Unlock()
 	})
-	RegisterDialect("togo-test-db", Dialect{Placeholder: func(n int) string { return ":p" }, ILike: "ILIKE"})
+	RegisterDialect("togo-test-db", Dialect{Placeholder: func(int) string { return ":p" }, ILike: "ILIKE"})
 	if d := DialectFor("togo-test-db"); d.ILike != "ILIKE" || d.Placeholder(1) != ":p" {
 		t.Fatalf("registered dialect not returned: %+v", d)
 	}
@@ -131,7 +131,7 @@ func TestKernelSQLPoolLimit(t *testing.T) {
 	}
 }
 
-func TestKernelCloseWithoutDB(t *testing.T) {
+func TestKernelCloseWithoutDB(*testing.T) {
 	(&Kernel{}).Close() // must not panic
 }
 
