@@ -9,8 +9,13 @@ import "sort"
 // blank-importing those packages (chosen at `togo new`), so the core hard-codes
 // nothing and any plugin can inject/override a provider globally.
 type Provider interface {
+	// ProviderName identifies the provider in logs and in Providers().
 	ProviderName() string
+	// ProviderPriority orders providers; lower runs first, so a higher value
+	// can override a service set by an earlier provider.
 	ProviderPriority() int
+	// Provide installs the provider's service on the kernel (e.g. sets
+	// k.Cache). A returned error is logged and does not stop other providers.
 	Provide(k *Kernel) error
 }
 
