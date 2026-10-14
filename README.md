@@ -2,9 +2,16 @@
 
 <h1 align="center">togo</h1>
 <p align="center"><em>Go, the artisan way.</em></p>
+<p align="center">
+  <a href="https://github.com/togo-framework/togo/actions/workflows/ci.yml"><img src="https://github.com/togo-framework/togo/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+  <a href="https://codecov.io/gh/togo-framework/togo"><img src="https://codecov.io/gh/togo-framework/togo/branch/main/graph/badge.svg" alt="Codecov" /></a>
+  <a href="https://goreportcard.com/report/github.com/togo-framework/togo"><img src="https://goreportcard.com/badge/github.com/togo-framework/togo" alt="Go Report Card" /></a>
+  <a href="https://pkg.go.dev/github.com/togo-framework/togo"><img src="https://pkg.go.dev/badge/github.com/togo-framework/togo.svg" alt="Go Reference" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/togo-framework/togo" alt="License: MIT" /></a>
+</p>
 
 **togo** is an open-source, API-first application framework for the **Go + sqlc +
-Atlas + GraphQL/OpenAPI + Next.js** stack. It brings a Laravel-artisan-like
+Atlas + GraphQL/OpenAPI + React** stack (TanStack by default, Next.js optional). It brings a Laravel-artisan-like
 developer experience to Go: a powerful CLI, code generators, a unified
 [marketplace](https://to-go.dev/marketplace) of plugins, AI agents, skills, MCP
 tools and UI components, Supabase auth/dashboard by default, a fast `togo deploy`,
