@@ -2,6 +2,7 @@ package togo
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -84,14 +85,10 @@ func itoa(n int) string {
 
 type panicError struct{ v any }
 
-func (e *panicError) Error() string { return "panic: " + sprint(e.v) }
+func (e *panicError) Error() string { return "panic: " + fmt.Sprint(e.v) }
 
-func sprint(v any) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
-	if e, ok := v.(error); ok {
-		return e.Error()
-	}
-	return "unknown"
+// Unwrap exposes a panicked error so hooks can match it with errors.Is/As.
+func (e *panicError) Unwrap() error {
+	err, _ := e.v.(error)
+	return err
 }
