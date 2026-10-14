@@ -35,6 +35,11 @@ func (k *Kernel) recovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
+				if rec == http.ErrAbortHandler {
+					// Deliberate abort (e.g. httputil.ReverseProxy): let net/http
+					// drop the connection quietly, as it does without middleware.
+					panic(rec)
+				}
 				k.ReportError(r.Context(), &panicError{rec})
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)

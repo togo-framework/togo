@@ -71,3 +71,28 @@ func TestRecoveryPassesThrough(t *testing.T) {
 		t.Fatalf("status = %d, want 418", rec.Code)
 	}
 }
+
+// http.ErrAbortHandler is net/http's sentinel for deliberately aborting a
+// response (e.g. httputil.ReverseProxy on a broken upstream). It must be
+// re-panicked so the server aborts the connection, not turned into a 500 and
+// reported as an application error.
+func TestRecoveryRepanicsErrAbortHandler(t *testing.T) {
+	k := newTestKernel(nil)
+	fired := false
+	k.Hooks.On("error", 0, func(context.Context, any) error { fired = true; return nil })
+	h := k.recovery(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic(http.ErrAbortHandler) }))
+
+	rec := httptest.NewRecorder()
+	defer func() {
+		if r := recover(); r != http.ErrAbortHandler {
+			t.Fatalf("recovered %v, want http.ErrAbortHandler re-panicked", r)
+		}
+		if fired {
+			t.Error("error hook fired for ErrAbortHandler")
+		}
+		if rec.Body.Len() != 0 {
+			t.Errorf("body written: %q", rec.Body.String())
+		}
+	}()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+}
